@@ -5,6 +5,7 @@ operator   ::= PLUS
              | POWER
 
 atom       ::= NUMBER
+             | - NUMBER
              | ( expression )
 
 expression ::= atom operator atom

@@ -145,8 +145,20 @@ void operator(parser *parser) {
   }
 }
 
+token *negate(token *lexeme) {
+  token *result = malloc(sizeof(token));
+  result->t = NUMBER;
+  result->value = malloc(11*sizeof(char));
+  snprintf(result->value, 11, "%d", -1*atoi(lexeme->value));
+  return result;
+}
+
 token *atom(parser *parser) {
   token *result = parser->currentLexeme;
+  if (check(parser, MINUS)) {
+    match(parser, MINUS);
+    return negate(atom(parser));
+  }
   if (check(parser, NUMBER)) {
     match(parser, NUMBER);
   } else if (check(parser, LEFT_PAREN)){
