@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-typedef enum {NUMBER, OPERATOR, EOL} type;
+typedef enum {NUMBER, PLUS, MINUS, MULTIPLY, DIVIDE, POWER, LEFT_PAREN, RIGHT_PAREN, EOL} type;
 
 typedef struct token {
   type t;
@@ -48,8 +48,44 @@ token *lex(parser *parser) {
   }
 
   switch (*parser->p) {
-    case '+': case '-' : case '*': case '/': case '^':
-      lexeme->t = OPERATOR;
+    case '+':
+      lexeme->t = PLUS;
+      lexeme->value = malloc(sizeof(char));
+      *lexeme->value = *parser->p;
+      parser->p++;
+      return lexeme;
+    case '-':
+      lexeme->t = MINUS;
+      lexeme->value = malloc(sizeof(char));
+      *lexeme->value = *parser->p;
+      parser->p++;
+      return lexeme;
+    case '*':
+      lexeme->t = MULTIPLY;
+      lexeme->value = malloc(sizeof(char));
+      *lexeme->value = *parser->p;
+      parser->p++;
+      return lexeme;
+    case '/':
+      lexeme->t = DIVIDE;
+      lexeme->value = malloc(sizeof(char));
+      *lexeme->value = *parser->p;
+      parser->p++;
+      return lexeme;
+    case '^':
+      lexeme->t = POWER;
+      lexeme->value = malloc(sizeof(char));
+      *lexeme->value = *parser->p;
+      parser->p++;
+      return lexeme;
+    case '(':
+      lexeme->t = LEFT_PAREN;
+      lexeme->value = malloc(sizeof(char));
+      *lexeme->value = *parser->p;
+      parser->p++;
+      return lexeme;
+    case ')':
+      lexeme->t = RIGHT_PAREN;
       lexeme->value = malloc(sizeof(char));
       *lexeme->value = *parser->p;
       parser->p++;
@@ -98,10 +134,29 @@ void match(parser *parser, type t) {
   advance(parser);
 }
 
+int operatorPending(parser *parser) {
+  return check(parser, PLUS) || check(parser, MINUS) || check(parser, MULTIPLY)
+         || check(parser, DIVIDE) || check(parser, POWER);
+}
+
+void operator(parser *parser) {
+  if (check(parser, PLUS)) {
+    match(parser, PLUS);
+  } else if (check(parser, MINUS)) {
+    match(parser, MINUS);
+  } else if (check(parser, MULTIPLY)) {
+    match(parser, MULTIPLY);
+  } else if (check(parser, DIVIDE)) {
+    match(parser, DIVIDE);
+  } else {
+    match(parser, POWER);
+  }
+}
+
 void expression(parser *parser) {
   match(parser, NUMBER);
-  if (check(parser, OPERATOR)) {
-    match(parser, OPERATOR);
+  if (operatorPending(parser)) {
+    operator(parser);
     expression(parser);
   }
 }

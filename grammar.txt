@@ -1,2 +1,8 @@
+operator   ::= PLUS
+             | MINUS
+             | MULTIPLY
+             | DIVIDE
+             | POWER
+
 expression ::= NUMBER
-             | NUMBER OPERATOR expression
+             | NUMBER operator expression
