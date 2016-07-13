@@ -102,11 +102,6 @@ token *lex(parser *parser) {
   return NULL;
 }
 
-void initParser(parser *parser) {
-  parser->p = malloc(1024 * sizeof(char));
-  parser->currentLexeme = NULL;
-}
-
 int check(parser *parser, type t) {
   return parser->currentLexeme->t == t;
 }
@@ -144,31 +139,6 @@ void operator(parser *parser) {
   } else {
     match(parser, POWER);
   }
-}
-
-token *negate(token *lexeme) {
-  token *result = malloc(sizeof(token));
-  result->t = NUMBER;
-  result->value = malloc(11 * sizeof(char));
-  snprintf(result->value, 11, "%d", -1 * atoi(lexeme->value));
-  return result;
-}
-
-token *atom(parser *parser) {
-  token *result = parser->currentLexeme;
-  if (check(parser, MINUS)) {
-    match(parser, MINUS);
-    return negate(atom(parser));
-  }
-  if (check(parser, NUMBER)) {
-    match(parser, NUMBER);
-  } else if (check(parser, LEFT_PAREN)) {
-    match(parser, LEFT_PAREN);
-    result = expression(parser, 0);
-    match(parser, RIGHT_PAREN);
-  }
-
-  return result;
 }
 
 int isBinaryOperator(token *lexeme) {
@@ -241,6 +211,31 @@ token *compute(token *lhs, token *operator, token *rhs) {
   return newLexeme;
 }
 
+token *negate(token *lexeme) {
+  token *result = malloc(sizeof(token));
+  result->t = NUMBER;
+  result->value = malloc(11 * sizeof(char));
+  snprintf(result->value, 11, "%d", -1 * atoi(lexeme->value));
+  return result;
+}
+
+token *atom(parser *parser) {
+  token *result = parser->currentLexeme;
+  if (check(parser, MINUS)) {
+    match(parser, MINUS);
+    return negate(atom(parser));
+  }
+  if (check(parser, NUMBER)) {
+    match(parser, NUMBER);
+  } else if (check(parser, LEFT_PAREN)) {
+    match(parser, LEFT_PAREN);
+    result = expression(parser, 0);
+    match(parser, RIGHT_PAREN);
+  }
+
+  return result;
+}
+
 token *expression(parser *parser, int minPrecedence) {
   token *result = atom(parser);
 
@@ -266,6 +261,11 @@ token *expression(parser *parser, int minPrecedence) {
 token *parse(parser *parser) {
   parser->currentLexeme = lex(parser);
   return expression(parser, 0);
+}
+
+void initParser(parser *parser) {
+  parser->p = malloc(1024 * sizeof(char));
+  parser->currentLexeme = NULL;
 }
 
 int main(int argc, char **argv) {
