@@ -175,7 +175,7 @@ int isBinaryOperator(token *lexeme) {
          || lexeme->t == DIVIDE || lexeme->t == POWER;
 }
 
-int isLeftAssoc(token *lexeme) {
+int isLeftAssociative(token *lexeme) {
   return lexeme->t == PLUS || lexeme->t == MINUS || lexeme->t == MULTIPLY
          || lexeme->t == DIVIDE;
 }
@@ -248,7 +248,7 @@ token *expression(parser *parser, int minPrecedence) {
     token *op = parser->currentLexeme;
     operator(parser);
     int nextMinPrecedence;
-    if (isLeftAssoc(op)) {
+    if (isLeftAssociative(op)) {
       nextMinPrecedence = currPrecedence + 1;
     } else {
       nextMinPrecedence = currPrecedence;
