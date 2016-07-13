@@ -5,9 +5,14 @@
 typedef enum {NUMBER, PLUS, MINUS, MULTIPLY, DIVIDE, POWER, LEFT_PAREN,
               RIGHT_PAREN, EOL} type;
 
+typedef union data {
+  char *str;
+  int i;
+} data;
+
 typedef struct token {
   type t;
-  char* value;
+  data data;
 } token;
 
 typedef struct parser {
@@ -17,18 +22,18 @@ typedef struct parser {
 
 token *expression(parser*, int);
 
-char *getNumber(parser *parser) {
-  char *buf = malloc(11 * sizeof(char));
+int getNumber(parser *parser) {
+  char *buf = malloc(20 * sizeof(char));
   int i = 0;
-  //cap numbers at 10 digits
-  while (i < 10 && isdigit(*parser->p)) {
+  //cap numbers at 19 digits
+  while (i < 20 && isdigit(*parser->p)) {
     buf[i] = *parser->p;
     parser->p++;
     i++;
   }
 
   buf[i] = '\0';
-  return buf;
+  return atoi(buf);
 }
 
 token *lex(parser *parser) {
@@ -37,7 +42,6 @@ token *lex(parser *parser) {
   }
 
   token *lexeme = malloc(sizeof(lexeme));
-  lexeme->value = NULL;
 
   if (*parser->p == '\0') {
     lexeme->t = EOL;
@@ -48,50 +52,50 @@ token *lex(parser *parser) {
   switch (*parser->p) {
   case '+':
     lexeme->t = PLUS;
-    lexeme->value = malloc(sizeof(char));
-    *lexeme->value = *parser->p;
+    lexeme->data.str = malloc(sizeof(char));
+    *lexeme->data.str = *parser->p;
     parser->p++;
     return lexeme;
   case '-':
     lexeme->t = MINUS;
-    lexeme->value = malloc(sizeof(char));
-    *lexeme->value = *parser->p;
+    lexeme->data.str = malloc(sizeof(char));
+    *lexeme->data.str = *parser->p;
     parser->p++;
     return lexeme;
   case '*':
     lexeme->t = MULTIPLY;
-    lexeme->value = malloc(sizeof(char));
-    *lexeme->value = *parser->p;
+    lexeme->data.str = malloc(sizeof(char));
+    *lexeme->data.str = *parser->p;
     parser->p++;
     return lexeme;
   case '/':
     lexeme->t = DIVIDE;
-    lexeme->value = malloc(sizeof(char));
-    *lexeme->value = *parser->p;
+    lexeme->data.str = malloc(sizeof(char));
+    *lexeme->data.str = *parser->p;
     parser->p++;
     return lexeme;
   case '^':
     lexeme->t = POWER;
-    lexeme->value = malloc(sizeof(char));
-    *lexeme->value = *parser->p;
+    lexeme->data.str = malloc(sizeof(char));
+    *lexeme->data.str = *parser->p;
     parser->p++;
     return lexeme;
   case '(':
     lexeme->t = LEFT_PAREN;
-    lexeme->value = malloc(sizeof(char));
-    *lexeme->value = *parser->p;
+    lexeme->data.str = malloc(sizeof(char));
+    *lexeme->data.str = *parser->p;
     parser->p++;
     return lexeme;
   case ')':
     lexeme->t = RIGHT_PAREN;
-    lexeme->value = malloc(sizeof(char));
-    *lexeme->value = *parser->p;
+    lexeme->data.str = malloc(sizeof(char));
+    *lexeme->data.str = *parser->p;
     parser->p++;
     return lexeme;
   default:
     if (isdigit(*parser->p)) {
       lexeme->t = NUMBER;
-      lexeme->value = getNumber(parser);
+      lexeme->data.i = getNumber(parser);
       return lexeme;
     } else {
       printf("Illegal character: %c\n", *parser->p);
@@ -183,28 +187,25 @@ int myPow(int x, int n) {
 token *compute(token *lhs, token *operator, token *rhs) {
   token *newLexeme = malloc(sizeof(token));
   newLexeme->t = NUMBER;
-  newLexeme->value = malloc(11 * sizeof(char));
 
-  int op1 = atoi(lhs->value);
-  int op2 = atoi(rhs->value);
-  switch (*operator->value) {
+  switch (*operator->data.str) {
   case '+':
-    snprintf(newLexeme->value, 11, "%d", op1 + op2);
+    newLexeme->data.i = lhs->data.i + rhs->data.i;
     break;
   case '-':
-    snprintf(newLexeme->value, 11, "%d", op1 - op2);
+    newLexeme->data.i = lhs->data.i - rhs->data.i;
     break;
   case '*':
-    snprintf(newLexeme->value, 11, "%d", op1 * op2);
+    newLexeme->data.i = lhs->data.i * rhs->data.i;
     break;
   case '/':
-    snprintf(newLexeme->value, 11, "%d", op1 / op2);
+    newLexeme->data.i = lhs->data.i / rhs->data.i;
     break;
   case '^':
-    snprintf(newLexeme->value, 11, "%d", myPow(op1, op2));
+    newLexeme->data.i = myPow(lhs->data.i, rhs->data.i);
     break;
   default:
-    printf("Error computing, unexpected operator: %s\n", operator->value);
+    printf("Error computing, unexpected operator: %s\n", operator->data.str);
     exit(1);
   }
 
@@ -212,11 +213,8 @@ token *compute(token *lhs, token *operator, token *rhs) {
 }
 
 token *negate(token *lexeme) {
-  token *result = malloc(sizeof(token));
-  result->t = NUMBER;
-  result->value = malloc(11 * sizeof(char));
-  snprintf(result->value, 11, "%d", -1 * atoi(lexeme->value));
-  return result;
+  lexeme->data.i *= -1;
+  return lexeme;
 }
 
 token *atom(parser *parser) {
@@ -276,7 +274,7 @@ int main(int argc, char **argv) {
     fgets(parser->p, 1024, stdin);
     token *result = parse(parser);
 
-    printf("Result is: %s\n", result->value);
+    printf("Result is: %d\n", result->data.i);
   }
   return 0;
 }
