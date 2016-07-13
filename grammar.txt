@@ -4,5 +4,7 @@ operator   ::= PLUS
              | DIVIDE
              | POWER
 
-expression ::= NUMBER
-             | NUMBER operator expression
+atom       ::= NUMBER
+             | ( expression )
+
+expression ::= atom operator atom
