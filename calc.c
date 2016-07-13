@@ -18,12 +18,6 @@ typedef struct parser {
   token *currentLexeme;
 } parser;
 
-/*
-Grammar:
-
-expression ::= NUMBER
-             | NUMBER OPERATOR expression
-*/
 char *getNumber(parser *parser) {
   char *buf = malloc(11*sizeof(char));
   int i=0;
