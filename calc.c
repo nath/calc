@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-typedef enum {NUMBER, PLUS, MINUS, MULTIPLY, DIVIDE, POWER, LEFT_PAREN, RIGHT_PAREN, EOL} type;
+typedef enum {NUMBER, PLUS, MINUS, MULTIPLY, DIVIDE, POWER, LEFT_PAREN,
+              RIGHT_PAREN, EOL} type;
 
 typedef struct token {
   type t;
@@ -17,8 +18,8 @@ typedef struct parser {
 token *expression(parser*, int);
 
 char *getNumber(parser *parser) {
-  char *buf = malloc(11*sizeof(char));
-  int i=0;
+  char *buf = malloc(11 * sizeof(char));
+  int i = 0;
   //cap numbers at 10 digits
   while (i < 10 && isdigit(*parser->p)) {
     buf[i] = *parser->p;
@@ -45,64 +46,64 @@ token *lex(parser *parser) {
   }
 
   switch (*parser->p) {
-    case '+':
-      lexeme->t = PLUS;
-      lexeme->value = malloc(sizeof(char));
-      *lexeme->value = *parser->p;
-      parser->p++;
+  case '+':
+    lexeme->t = PLUS;
+    lexeme->value = malloc(sizeof(char));
+    *lexeme->value = *parser->p;
+    parser->p++;
+    return lexeme;
+  case '-':
+    lexeme->t = MINUS;
+    lexeme->value = malloc(sizeof(char));
+    *lexeme->value = *parser->p;
+    parser->p++;
+    return lexeme;
+  case '*':
+    lexeme->t = MULTIPLY;
+    lexeme->value = malloc(sizeof(char));
+    *lexeme->value = *parser->p;
+    parser->p++;
+    return lexeme;
+  case '/':
+    lexeme->t = DIVIDE;
+    lexeme->value = malloc(sizeof(char));
+    *lexeme->value = *parser->p;
+    parser->p++;
+    return lexeme;
+  case '^':
+    lexeme->t = POWER;
+    lexeme->value = malloc(sizeof(char));
+    *lexeme->value = *parser->p;
+    parser->p++;
+    return lexeme;
+  case '(':
+    lexeme->t = LEFT_PAREN;
+    lexeme->value = malloc(sizeof(char));
+    *lexeme->value = *parser->p;
+    parser->p++;
+    return lexeme;
+  case ')':
+    lexeme->t = RIGHT_PAREN;
+    lexeme->value = malloc(sizeof(char));
+    *lexeme->value = *parser->p;
+    parser->p++;
+    return lexeme;
+  default:
+    if (isdigit(*parser->p)) {
+      lexeme->t = NUMBER;
+      lexeme->value = getNumber(parser);
       return lexeme;
-    case '-':
-      lexeme->t = MINUS;
-      lexeme->value = malloc(sizeof(char));
-      *lexeme->value = *parser->p;
-      parser->p++;
-      return lexeme;
-    case '*':
-      lexeme->t = MULTIPLY;
-      lexeme->value = malloc(sizeof(char));
-      *lexeme->value = *parser->p;
-      parser->p++;
-      return lexeme;
-    case '/':
-      lexeme->t = DIVIDE;
-      lexeme->value = malloc(sizeof(char));
-      *lexeme->value = *parser->p;
-      parser->p++;
-      return lexeme;
-    case '^':
-      lexeme->t = POWER;
-      lexeme->value = malloc(sizeof(char));
-      *lexeme->value = *parser->p;
-      parser->p++;
-      return lexeme;
-    case '(':
-      lexeme->t = LEFT_PAREN;
-      lexeme->value = malloc(sizeof(char));
-      *lexeme->value = *parser->p;
-      parser->p++;
-      return lexeme;
-    case ')':
-      lexeme->t = RIGHT_PAREN;
-      lexeme->value = malloc(sizeof(char));
-      *lexeme->value = *parser->p;
-      parser->p++;
-      return lexeme;
-    default:
-      if (isdigit(*parser->p)) {
-        lexeme->t = NUMBER;
-        lexeme->value = getNumber(parser);
-        return lexeme;
-      } else {
-        printf("Illegal character: %c\n", *parser->p);
-        exit(1);
-      }
+    } else {
+      printf("Illegal character: %c\n", *parser->p);
+      exit(1);
+    }
   }
 
   return NULL;
 }
 
 void initParser(parser *parser) {
-  parser->p = malloc(1024*sizeof(char));
+  parser->p = malloc(1024 * sizeof(char));
   parser->currentLexeme = NULL;
 }
 
@@ -148,8 +149,8 @@ void operator(parser *parser) {
 token *negate(token *lexeme) {
   token *result = malloc(sizeof(token));
   result->t = NUMBER;
-  result->value = malloc(11*sizeof(char));
-  snprintf(result->value, 11, "%d", -1*atoi(lexeme->value));
+  result->value = malloc(11 * sizeof(char));
+  snprintf(result->value, 11, "%d", -1 * atoi(lexeme->value));
   return result;
 }
 
@@ -161,7 +162,7 @@ token *atom(parser *parser) {
   }
   if (check(parser, NUMBER)) {
     match(parser, NUMBER);
-  } else if (check(parser, LEFT_PAREN)){
+  } else if (check(parser, LEFT_PAREN)) {
     match(parser, LEFT_PAREN);
     result = expression(parser, 0);
     match(parser, RIGHT_PAREN);
@@ -199,42 +200,42 @@ int myPow(int x, int n) {
   while (n != 1) {
     if (n % 2) {
       y *= x;
-      n = (n-1)/2;
+      n = (n - 1) / 2;
     } else {
       n /= 2;
     }
     x *= x;
   }
 
-  return x*y;
+  return x * y;
 }
 
 token *compute(token *lhs, token *operator, token *rhs) {
   token *newLexeme = malloc(sizeof(token));
   newLexeme->t = NUMBER;
-  newLexeme->value = malloc(11*sizeof(char));
+  newLexeme->value = malloc(11 * sizeof(char));
 
   int op1 = atoi(lhs->value);
   int op2 = atoi(rhs->value);
   switch (*operator->value) {
-    case '+':
-      snprintf(newLexeme->value, 11, "%d", op1+op2);
-      break;
-    case '-':
-      snprintf(newLexeme->value, 11, "%d", op1-op2);
-      break;
-    case '*':
-      snprintf(newLexeme->value, 11, "%d", op1*op2);
-      break;
-    case '/':
-      snprintf(newLexeme->value, 11, "%d", op1/op2);
-      break;
-    case '^':
-      snprintf(newLexeme->value, 11, "%d", myPow(op1, op2));
-      break;
-    default:
-      printf("Error computing, unexpected operator: %s\n", operator->value);
-      exit(1);
+  case '+':
+    snprintf(newLexeme->value, 11, "%d", op1 + op2);
+    break;
+  case '-':
+    snprintf(newLexeme->value, 11, "%d", op1 - op2);
+    break;
+  case '*':
+    snprintf(newLexeme->value, 11, "%d", op1 * op2);
+    break;
+  case '/':
+    snprintf(newLexeme->value, 11, "%d", op1 / op2);
+    break;
+  case '^':
+    snprintf(newLexeme->value, 11, "%d", myPow(op1, op2));
+    break;
+  default:
+    printf("Error computing, unexpected operator: %s\n", operator->value);
+    exit(1);
   }
 
   return newLexeme;
@@ -243,7 +244,9 @@ token *compute(token *lhs, token *operator, token *rhs) {
 token *expression(parser *parser, int minPrecedence) {
   token *result = atom(parser);
 
-  while (operatorPending(parser) && (isBinaryOperator(parser->currentLexeme) && getPrecedence(parser->currentLexeme) >= minPrecedence)) {
+  while (operatorPending(parser) &&
+         isBinaryOperator(parser->currentLexeme) &&
+         getPrecedence(parser->currentLexeme) >= minPrecedence) {
     int currPrecedence = getPrecedence(parser->currentLexeme);
     token *op = parser->currentLexeme;
     operator(parser);
