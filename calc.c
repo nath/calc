@@ -3,7 +3,7 @@
 #include <ctype.h>
 #include <math.h>
 
-typedef enum {NUMBER, PLUS, MINUS, MULTIPLY, DIVIDE, POWER, LEFT_PAREN,
+typedef enum {NUMBER, PLUS, MINUS, MULTIPLY, DIVIDE, MODULO, POWER, LEFT_PAREN,
               RIGHT_PAREN, EOL} type;
 
 typedef union data {
@@ -92,6 +92,12 @@ token *lex(parser *parser) {
     *lexeme->data.str = *parser->p;
     parser->p++;
     return lexeme;
+  case '%':
+    lexeme->t = MODULO;
+    lexeme->data.str = malloc(sizeof(char));
+    *lexeme->data.str = *parser->p;
+    parser->p++;
+    return lexeme;
   case '^':
     lexeme->t = POWER;
     lexeme->data.str = malloc(sizeof(char));
@@ -146,7 +152,8 @@ void match(parser *parser, type t) {
 
 int operatorPending(parser *parser) {
   return check(parser, PLUS) || check(parser, MINUS) || check(parser, MULTIPLY)
-         || check(parser, DIVIDE) || check(parser, POWER);
+         || check(parser, DIVIDE) || check(parser, MODULO) || check(parser,
+                                                                    POWER);
 }
 
 void operator(parser *parser) {
@@ -158,6 +165,8 @@ void operator(parser *parser) {
     match(parser, MULTIPLY);
   } else if (check(parser, DIVIDE)) {
     match(parser, DIVIDE);
+  }else if (check(parser, MODULO)) {
+    match(parser, MODULO);
   } else {
     match(parser, POWER);
   }
@@ -165,18 +174,19 @@ void operator(parser *parser) {
 
 int isBinaryOperator(token *lexeme) {
   return lexeme->t == PLUS || lexeme->t == MINUS || lexeme->t == MULTIPLY
-         || lexeme->t == DIVIDE || lexeme->t == POWER;
+         || lexeme->t == DIVIDE || lexeme->t == MODULO || lexeme->t == POWER;
 }
 
 int isLeftAssociative(token *lexeme) {
   return lexeme->t == PLUS || lexeme->t == MINUS || lexeme->t == MULTIPLY
-         || lexeme->t == DIVIDE;
+         || lexeme->t == DIVIDE || lexeme->t == MODULO;
 }
 
 int getPrecedence(token *lexeme) {
   if (lexeme->t == PLUS || lexeme->t == MINUS) {
     return 0;
-  } else if (lexeme->t == MULTIPLY || lexeme->t == DIVIDE) {
+  } else if (lexeme->t == MULTIPLY || lexeme->t == DIVIDE || lexeme->t ==
+             MODULO) {
     return 1;
   } else {
     return 2;
@@ -199,6 +209,9 @@ token *compute(token *lhs, token *operator, token *rhs) {
     break;
   case '/':
     newLexeme->data.num = lhs->data.num / rhs->data.num;
+    break;
+  case '%':
+    newLexeme->data.num = fmod(lhs->data.num, rhs->data.num);
     break;
   case '^':
     newLexeme->data.num = pow(lhs->data.num, rhs->data.num);

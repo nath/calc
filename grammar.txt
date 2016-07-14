@@ -2,6 +2,7 @@ operator   ::= PLUS
              | MINUS
              | MULTIPLY
              | DIVIDE
+             | MODULO
              | POWER
 
 atom       ::= NUMBER
