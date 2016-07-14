@@ -1,13 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <math.h>
 
 typedef enum {NUMBER, PLUS, MINUS, MULTIPLY, DIVIDE, POWER, LEFT_PAREN,
               RIGHT_PAREN, EOL} type;
 
 typedef union data {
   char *str;
-  int i;
+  double num;
 } data;
 
 typedef struct token {
@@ -22,18 +23,35 @@ typedef struct parser {
 
 token *expression(parser*, int);
 
-int getNumber(parser *parser) {
-  char *buf = malloc(20 * sizeof(char));
+double getNumber(parser *parser) {
+  char *buf = malloc(18 * sizeof(char));
   int i = 0;
   //cap numbers at 19 digits
-  while (i < 20 && isdigit(*parser->p)) {
+  while (i < 10 && isdigit(*parser->p)) {
     buf[i] = *parser->p;
     parser->p++;
     i++;
   }
 
+  if (*parser->p == '.') {
+    buf[i] = '.';
+    parser->p++;
+    i++;
+    while (isdigit(*parser->p)) {
+      if (i < 17) { //accept infinitly long decimals, but cut off after 6 digits
+        buf[i] = *parser->p;
+      }
+      parser->p++;
+      i++;
+    }
+  }
+
   buf[i] = '\0';
-  return atoi(buf);
+
+  double ret;
+  sscanf(buf, "%lf", &ret);
+
+  return ret;
 }
 
 token *lex(parser *parser) {
@@ -95,7 +113,7 @@ token *lex(parser *parser) {
   default:
     if (isdigit(*parser->p)) {
       lexeme->t = NUMBER;
-      lexeme->data.i = getNumber(parser);
+      lexeme->data.num = getNumber(parser);
       return lexeme;
     } else {
       printf("Illegal character: %c\n", *parser->p);
@@ -165,44 +183,25 @@ int getPrecedence(token *lexeme) {
   }
 }
 
-int myPow(int x, int n) {
-  //too lazy to link math lib and deal with doubles
-  if (n == 0 || x == 1) {
-    return 1;
-  }
-  int y = 1;
-  while (n != 1) {
-    if (n % 2) {
-      y *= x;
-      n = (n - 1) / 2;
-    } else {
-      n /= 2;
-    }
-    x *= x;
-  }
-
-  return x * y;
-}
-
 token *compute(token *lhs, token *operator, token *rhs) {
   token *newLexeme = malloc(sizeof(token));
   newLexeme->t = NUMBER;
 
   switch (*operator->data.str) {
   case '+':
-    newLexeme->data.i = lhs->data.i + rhs->data.i;
+    newLexeme->data.num = lhs->data.num + rhs->data.num;
     break;
   case '-':
-    newLexeme->data.i = lhs->data.i - rhs->data.i;
+    newLexeme->data.num = lhs->data.num - rhs->data.num;
     break;
   case '*':
-    newLexeme->data.i = lhs->data.i * rhs->data.i;
+    newLexeme->data.num = lhs->data.num * rhs->data.num;
     break;
   case '/':
-    newLexeme->data.i = lhs->data.i / rhs->data.i;
+    newLexeme->data.num = lhs->data.num / rhs->data.num;
     break;
   case '^':
-    newLexeme->data.i = myPow(lhs->data.i, rhs->data.i);
+    newLexeme->data.num = pow(lhs->data.num, rhs->data.num);
     break;
   default:
     printf("Error computing, unexpected operator: %s\n", operator->data.str);
@@ -213,22 +212,23 @@ token *compute(token *lhs, token *operator, token *rhs) {
 }
 
 token *negate(token *lexeme) {
-  lexeme->data.i *= -1;
+  lexeme->data.num *= -1;
   return lexeme;
 }
 
 token *atom(parser *parser) {
-  token *result = parser->currentLexeme;
-  if (check(parser, MINUS)) {
-    match(parser, MINUS);
-    return negate(atom(parser));
-  }
+  token *result = NULL;
+
   if (check(parser, NUMBER)) {
+    result = parser->currentLexeme;
     match(parser, NUMBER);
   } else if (check(parser, LEFT_PAREN)) {
     match(parser, LEFT_PAREN);
     result = expression(parser, 0);
     match(parser, RIGHT_PAREN);
+  } else {
+    match(parser, MINUS);
+    result = negate(atom(parser));
   }
 
   return result;
@@ -258,7 +258,22 @@ token *expression(parser *parser, int minPrecedence) {
 
 token *parse(parser *parser) {
   parser->currentLexeme = lex(parser);
-  return expression(parser, 0);
+  token *ret = expression(parser, 0);
+  match(parser, EOL);
+  return ret;
+}
+
+void printToken(token *lexeme) {
+  if (lexeme->t == NUMBER) {
+    //print integers without the extra 0's
+    if (lexeme->data.num - floor(lexeme->data.num) < 0.000001) {
+      printf("%d\n", (int)lexeme->data.num);
+    } else {
+      printf("%lf\n", lexeme->data.num);
+    }
+  } else {
+    printf("%s\n", lexeme->data.str);
+  }
 }
 
 void initParser(parser *parser) {
@@ -274,7 +289,7 @@ int main(int argc, char **argv) {
     fgets(parser->p, 1024, stdin);
     token *result = parse(parser);
 
-    printf("Result is: %d\n", result->data.i);
+    printToken(result);
   }
   return 0;
 }
