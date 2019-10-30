@@ -1,5 +1,6 @@
 #calc
-##A kinda sucky (but ever improving) cli calculator
+
+##A kinda sucky (but never improving) cli calculator
 
 calc is a weird amalgamation of a recursive descent parser for maybe the world's simplest grammar and a calculator.
 
